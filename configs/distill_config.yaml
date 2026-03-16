@@ -1,0 +1,38 @@
+# ============================================================
+# Knowledge Distillation Configuration
+# COMP 4901D Project 6 - Edge Vision Model Compression
+# ============================================================
+
+# --- Model Configuration ---
+teacher_weights: "yolov8l.pt"    # Teacher: YOLOv8-Large (43.7M params, mAP 52.9)
+student_weights: "yolov8n.pt"    # Student: YOLOv8-Nano  (3.2M params, mAP 37.3)
+
+# --- Dataset ---
+data: "coco.yaml"                # Full COCO 2017 (use "coco128.yaml" for debug)
+imgsz: 640                       # Input image size
+
+# --- Training Hyperparameters ---
+epochs: 100                      # Total training epochs (100-200 for KD)
+batch_size: 16                   # Batch size (reduce to 8 if VRAM < 8GB)
+lr0: 0.01                        # Initial learning rate
+momentum: 0.937                  # SGD momentum
+weight_decay: 0.0005             # Weight decay (L2 regularization)
+warmup_epochs: 3                 # Learning rate warmup epochs
+workers: 8                       # DataLoader workers (reduce on Windows if needed)
+
+# --- Distillation Hyperparameters ---
+alpha: 0.5                       # Weight for feature distillation loss
+beta: 0.0                        # Weight for response KD loss (0 = feature-only)
+temperature: 4.0                 # Temperature for response KD (only if beta > 0)
+feature_loss_type: "mse"         # "mse" or "l1" for feature imitation loss
+normalize_features: false        # L2-normalize features before computing loss
+
+# --- Output ---
+project: "runs/distill"          # Output project directory
+name: "yolov8l_to_yolov8n"      # Experiment name
+save_period: 10                  # Save checkpoint every N epochs
+val_period: 5                    # Validate every N epochs
+
+# --- Device ---
+device: ""                       # "" = auto, "0" = GPU 0, "cpu" = CPU only
+

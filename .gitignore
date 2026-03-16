@@ -1,0 +1,52 @@
+# ============================================================
+# COMP 4901D Project 6 - .gitignore
+# ============================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+
+# --- Virtual Environment ---
+comp4901d_env/
+venv/
+.venv/
+env/
+
+# --- Model Weights & Exports ---
+*.pt
+*.onnx
+*.engine
+*.trt
+
+# --- Training / Experiment Outputs ---
+runs/
+
+# --- Test Images ---
+bus.jpg
+
+# --- Project Documents (optional, uncomment if needed) ---
+# *.pdf
+# *.docx
+
+# --- OS / IDE ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Temporary Helper Scripts ---
+_run_project.py
+_run_in_venv.py
+_verify_env.py
+_test_pareto.py
+
+# --- Datasets (if downloaded locally) ---
+datasets/
+coco/
+coco128/
+
