@@ -1,10 +1,13 @@
 # ============================================================
-# Knowledge Distillation Configuration
+# Knowledge Distillation Configuration (Desktop / Server GPU)
 # COMP 4901D Project 6 - Edge Vision Model Compression
+#
+# 若要在 Jetson Orin Nano 上直接訓練，請改用：
+#   python train_distill.py --config configs/distill_config_jetson.yaml
 # ============================================================
 
 # --- Model Configuration ---
-teacher_weights: "yolov8l.pt"    # Teacher: YOLOv8-Large (43.7M params, mAP 52.9)
+teacher_weights: "yolov8s.pt"    # Teacher: YOLOv8-Small (11.2M params, mAP 44.9)
 student_weights: "yolov8n.pt"    # Student: YOLOv8-Nano  (3.2M params, mAP 37.3)
 
 # --- Dataset ---
@@ -13,12 +16,12 @@ imgsz: 640                       # Input image size
 
 # --- Training Hyperparameters ---
 epochs: 100                      # Total training epochs (100-200 for KD)
-batch_size: 16                   # Batch size (reduce to 8 if VRAM < 8GB)
+batch_size: 16                   # Batch size (Jetson: 2-4; Desktop GPU: 8-16)
 lr0: 0.01                        # Initial learning rate
 momentum: 0.937                  # SGD momentum
 weight_decay: 0.0005             # Weight decay (L2 regularization)
 warmup_epochs: 3                 # Learning rate warmup epochs
-workers: 8                       # DataLoader workers (reduce on Windows if needed)
+workers: 8                       # DataLoader workers (Jetson: 2; Desktop: 8)
 
 # --- Distillation Hyperparameters ---
 alpha: 0.5                       # Weight for feature distillation loss
@@ -27,12 +30,19 @@ temperature: 4.0                 # Temperature for response KD (only if beta > 0
 feature_loss_type: "mse"         # "mse" or "l1" for feature imitation loss
 normalize_features: false        # L2-normalize features before computing loss
 
+# --- Memory Optimisation ---
+teacher_half: true               # Convert teacher to FP16 (saves ~50% memory)
+amp: true                        # AMP mixed-precision training
+nbs: 64                          # Nominal batch size for gradient accumulation
+cache: ""                        # "" = none, "disk" or "ram"
+
 # --- Output ---
 project: "runs/distill"          # Output project directory
-name: "yolov8l_to_yolov8n"      # Experiment name
+name: "yolov8s_to_yolov8n"      # Experiment name
 save_period: 10                  # Save checkpoint every N epochs
 val_period: 5                    # Validate every N epochs
 
 # --- Device ---
 device: ""                       # "" = auto, "0" = GPU 0, "cpu" = CPU only
+
 

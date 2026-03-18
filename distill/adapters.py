@@ -86,3 +86,4 @@ class ChannelAdapter(nn.Module):
                 adapted[name] = feat
         return adapted
 
+

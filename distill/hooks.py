@@ -163,3 +163,4 @@ def detect_feature_channels_from_yolo(
     extractor.remove_hooks()
     return channels
 
+

@@ -6,12 +6,20 @@ Extends the standard Ultralytics training loop to incorporate:
 2. Student model forward pass with feature extraction hooks
 3. Combined loss = YOLO detection loss + alpha * feature distillation loss
 
+Optimised for Jetson Orin Nano (8 GB shared RAM):
+- Teacher kept in FP16 to halve memory footprint
+- AMP (mixed-precision) enabled by default for student training
+- Gradient accumulation via Ultralytics' nbs to compensate for small batch
+- Explicit CUDA cache cleanup after teacher forward
+
 Usage:
     from distill.trainer import DistillationTrainer
     trainer = DistillationTrainer(
-        teacher_weights="yolov8l.pt",
+        teacher_weights="yolov8s.pt",
         student_weights="yolov8n.pt",
         data="coco.yaml",
+        batch_size=4,
+        teacher_half=True,
         ...
     )
     trainer.train()
@@ -19,6 +27,7 @@ Usage:
 
 from __future__ import annotations
 
+import gc
 import os
 import time
 import copy
@@ -47,16 +56,21 @@ class DistillationTrainer:
     - Teacher (large YOLO) is frozen, only used for feature extraction
     - Student (small YOLO) is trained with combined detection + distillation loss
     - 1x1 Conv adapters align channel dimensions between teacher/student features
+
+    Memory-optimised for edge devices (Jetson Orin Nano 8 GB):
+    - teacher_half: keep teacher weights in FP16 (saves ~50% teacher VRAM)
+    - amp: automatic mixed-precision for student training
+    - nbs: nominal batch size for gradient accumulation
     """
 
     def __init__(
         self,
-        teacher_weights: str = "yolov8l.pt",
+        teacher_weights: str = "yolov8s.pt",
         student_weights: str = "yolov8n.pt",
         data: str = "coco.yaml",
         imgsz: int = 640,
         epochs: int = 100,
-        batch_size: int = 16,
+        batch_size: int = 4,
         alpha: float = 0.5,
         beta: float = 0.0,
         temperature: float = 4.0,
@@ -69,9 +83,13 @@ class DistillationTrainer:
         name: str = "exp",
         save_period: int = 10,
         val_period: int = 5,
-        workers: int = 8,
+        workers: int = 2,
         feature_loss_type: str = "mse",
         normalize_features: bool = False,
+        teacher_half: bool = True,
+        amp: bool = True,
+        nbs: int = 64,
+        cache: str = "",
     ):
         """
         Args:
@@ -80,7 +98,7 @@ class DistillationTrainer:
             data: Path to dataset YAML config.
             imgsz: Input image size.
             epochs: Total training epochs.
-            batch_size: Batch size for training.
+            batch_size: Batch size per step (keep small on Jetson, e.g. 2-4).
             alpha: Weight for feature distillation loss.
             beta: Weight for response KD loss (0 = feature-only).
             temperature: Temperature for response KD.
@@ -93,9 +111,15 @@ class DistillationTrainer:
             name: Experiment name.
             save_period: Save checkpoint every N epochs.
             val_period: Run validation every N epochs.
-            workers: DataLoader workers.
+            workers: DataLoader workers (keep low on Jetson, e.g. 2).
             feature_loss_type: "mse" or "l1".
             normalize_features: Whether to normalize features before loss.
+            teacher_half: Convert teacher to FP16 to save memory.
+            amp: Enable automatic mixed-precision for student training.
+            nbs: Nominal batch size for gradient accumulation
+                 (effective accumulate = nbs // batch_size).
+            cache: Dataset caching ("", "ram", "disk").  "ram" speeds up IO
+                   on Jetson but uses more memory; "disk" is a safe middle ground.
         """
         self.teacher_weights = teacher_weights
         self.student_weights = student_weights
@@ -118,6 +142,10 @@ class DistillationTrainer:
         self.workers = workers
         self.feature_loss_type = feature_loss_type
         self.normalize_features = normalize_features
+        self.teacher_half = teacher_half
+        self.amp = amp
+        self.nbs = nbs
+        self.cache = cache
 
         # Will be initialized in setup()
         self.teacher_model = None
@@ -143,6 +171,9 @@ class DistillationTrainer:
             self.device = torch.device(f"cuda:{self.device_str}")
 
         LOGGER.info(f"[KD] Using device: {self.device}")
+        if self.device.type == "cuda":
+            mem = torch.cuda.get_device_properties(self.device).total_mem
+            LOGGER.info(f"[KD] GPU memory: {mem / 1e9:.1f} GB")
 
         # ---- Save directory ----
         self.save_dir = Path(self.project) / self.name
@@ -173,6 +204,11 @@ class DistillationTrainer:
         )
         LOGGER.info(f"[KD] Teacher channels: {teacher_channels}")
         LOGGER.info(f"[KD] Student channels: {student_channels}")
+
+        # ---- Convert teacher to FP16 after channel detection ----
+        if self.teacher_half and self.device.type == "cuda":
+            self.teacher_model.half()
+            LOGGER.info("[KD] Teacher converted to FP16 (saves ~50% memory)")
 
         # ---- Feature Extractors (hooks) ----
         teacher_inner = self.teacher_model.model  # nn.Sequential
@@ -212,11 +248,27 @@ class DistillationTrainer:
             eta_min=self.lr0 * 0.01,
         )
 
+        # Free unused memory before training starts
+        if self.device.type == "cuda":
+            torch.cuda.empty_cache()
+            gc.collect()
+
+        teacher_param_count = sum(p.numel() for p in self.teacher_model.parameters())
+        teacher_mem_mb = sum(
+            p.numel() * p.element_size() for p in self.teacher_model.parameters()
+        ) / (1024 ** 2)
+        accumulate = max(round(self.nbs / self.batch_size), 1)
+
         LOGGER.info("[KD] Setup complete.")
-        LOGGER.info(f"[KD] Teacher: {sum(p.numel() for p in self.teacher_model.parameters()):,} params (frozen)")
+        LOGGER.info(
+            f"[KD] Teacher: {teacher_param_count:,} params "
+            f"({'FP16' if self.teacher_half else 'FP32'}, ~{teacher_mem_mb:.0f} MB)"
+        )
         LOGGER.info(f"[KD] Student: {sum(p.numel() for p in self.student_model.parameters()):,} params (trainable)")
         LOGGER.info(f"[KD] Adapter: {sum(p.numel() for p in self.adapter.parameters()):,} params")
         LOGGER.info(f"[KD] alpha={self.alpha}, beta={self.beta}, T={self.temperature}")
+        LOGGER.info(f"[KD] batch={self.batch_size}, accumulate={accumulate}, effective_batch={self.batch_size * accumulate}")
+        LOGGER.info(f"[KD] AMP={self.amp}, teacher_half={self.teacher_half}")
 
     def train(self):
         """
@@ -268,33 +320,38 @@ class DistillationTrainer:
         """
         from ultralytics.models.yolo.detect import DetectionTrainer
 
-        trainer = DetectionTrainer(
-            overrides={
-                "model": self.student_weights,
-                "data": self.data,
-                "epochs": self.epochs,
-                "imgsz": self.imgsz,
-                "batch": self.batch_size,
-                "device": self.device_str if self.device_str else None,
-                "project": self.project,
-                "name": self.name,
-                "lr0": self.lr0,
-                "momentum": self.momentum,
-                "weight_decay": self.weight_decay,
-                "warmup_epochs": self.warmup_epochs,
-                "workers": self.workers,
-                "save_period": self.save_period,
-                "val": True,
-                "plots": True,
-                "exist_ok": True,
-            }
-        )
+        overrides = {
+            "model": self.student_weights,
+            "data": self.data,
+            "epochs": self.epochs,
+            "imgsz": self.imgsz,
+            "batch": self.batch_size,
+            "device": self.device_str if self.device_str else None,
+            "project": self.project,
+            "name": self.name,
+            "lr0": self.lr0,
+            "momentum": self.momentum,
+            "weight_decay": self.weight_decay,
+            "warmup_epochs": self.warmup_epochs,
+            "workers": self.workers,
+            "save_period": self.save_period,
+            "val": True,
+            "plots": True,
+            "exist_ok": True,
+            "amp": self.amp,
+            "nbs": self.nbs,
+        }
+        if self.cache:
+            overrides["cache"] = self.cache
+
+        trainer = DetectionTrainer(overrides=overrides)
 
         # ---- Closure references ----
         teacher_model = self.teacher_model
         teacher_extractor = self.teacher_extractor
         adapter = self.adapter
         distill_loss_fn = self.distill_loss_fn
+        teacher_half = self.teacher_half
 
         # Mutable holder so inner callbacks can share the student extractor
         _student_ext = [None]
@@ -322,6 +379,8 @@ class DistillationTrainer:
             # 2. Move teacher / adapter / loss to the same device as student
             dev = next(model.parameters()).device
             teacher_model.to(dev)
+            if teacher_half and dev.type == "cuda":
+                teacher_model.half()
             adapter.to(dev)
             distill_loss_fn.to(dev)
 
@@ -329,28 +388,31 @@ class DistillationTrainer:
             teacher_extractor.register_hooks()
 
             # 3. Monkey-patch model.loss
-            #    In Ultralytics 8.x the training loop calls:
-            #        self.loss, self.loss_items = self.model(batch)
-            #    BaseModel.forward(batch_dict) → self.loss(batch)
-            #    BaseModel.loss() runs student forward & criterion.
-            #    We wrap that to add the teacher forward + distillation loss.
-            _original_loss = model.loss          # bound method
+            _original_loss = model.loss
 
             def _kd_loss(batch, preds=None):
-                # a) original detection loss (student forward happens here)
                 det_loss, det_loss_items = _original_loss(batch, preds)
 
-                # b) student features were captured by hooks in (a)
                 s_feats = student_ext.get_features()
                 if s_feats:
-                    # c) teacher forward (frozen, no grad)
+                    # Teacher forward (frozen, no grad, FP16-safe)
+                    img = batch["img"]
+                    if teacher_half and img.device.type == "cuda":
+                        img = img.half()
                     with torch.no_grad():
-                        teacher_model(batch["img"])
+                        teacher_model(img)
                     t_feats = teacher_extractor.get_features()
 
-                    # d) adapt channels & compute feature distillation loss
+                    # Cast teacher features back to FP32 for loss computation
+                    if teacher_half:
+                        t_feats = {k: v.float() for k, v in t_feats.items()}
+
                     adapted_s = adapter(s_feats)
                     d_out = distill_loss_fn(adapted_s, t_feats)
+
+                    # Free teacher features immediately to save memory
+                    teacher_extractor.clear_features()
+                    student_ext.clear_features()
 
                     return det_loss + d_out["total_distill_loss"], det_loss_items
 
@@ -359,7 +421,6 @@ class DistillationTrainer:
             model.loss = _kd_loss
 
             # 4. Add adapter parameters to the optimizer AND update scheduler
-            #    "initial_lr" is required by Ultralytics' warmup / LR logic.
             adapter_lr = trainer_instance.args.lr0
             trainer_instance.optimizer.add_param_group({
                 "params": list(adapter.parameters()),
@@ -369,19 +430,16 @@ class DistillationTrainer:
 
             # The LR scheduler (LambdaLR) was built before we added the
             # extra param-group, so its internal lists are one element short.
-            # Extend them so scheduler.step() won't crash.
             sched = trainer_instance.scheduler
             if sched is not None:
                 if hasattr(sched, "lr_lambdas") and len(sched.lr_lambdas) < len(
                     trainer_instance.optimizer.param_groups
                 ):
-                    # Re-use the first group's lambda for the adapter
                     sched.lr_lambdas.append(sched.lr_lambdas[0])
                 if hasattr(sched, "base_lrs") and len(sched.base_lrs) < len(
                     trainer_instance.optimizer.param_groups
                 ):
                     sched.base_lrs.append(adapter_lr)
-                # Also extend _last_lr if it exists (used by get_last_lr())
                 if hasattr(sched, "_last_lr") and len(sched._last_lr) < len(
                     trainer_instance.optimizer.param_groups
                 ):
@@ -395,16 +453,26 @@ class DistillationTrainer:
 
         # ------------------------------------------------------------------
         def on_train_epoch_end(trainer_instance):
+            mem_info = ""
+            if torch.cuda.is_available():
+                alloc = torch.cuda.memory_allocated() / (1024 ** 2)
+                reserved = torch.cuda.memory_reserved() / (1024 ** 2)
+                mem_info = f" | GPU mem: {alloc:.0f}/{reserved:.0f} MB (alloc/reserved)"
+                torch.cuda.empty_cache()
             LOGGER.info(
                 f"[KD] Epoch {trainer_instance.epoch + 1}/{self.epochs} — "
                 f"LR: {trainer_instance.optimizer.param_groups[0]['lr']:.6f}"
+                f"{mem_info}"
             )
 
         def on_train_end(trainer_instance):
             if _student_ext[0]:
                 _student_ext[0].remove_hooks()
             teacher_extractor.remove_hooks()
-            LOGGER.info("[KD] Training complete. Hooks removed.")
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            gc.collect()
+            LOGGER.info("[KD] Training complete. Hooks removed, memory freed.")
 
         # ---- register callbacks ----
         trainer.add_callback("on_pretrain_routine_end", on_pretrain_routine_end)
