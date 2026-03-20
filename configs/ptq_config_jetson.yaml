@@ -1,0 +1,23 @@
+# ============================================================
+# INT8 PTQ Configuration — Jetson Orin Nano
+# COMP 4901D Project 6 - Edge Vision Model Compression
+# ============================================================
+
+# Source model
+weights: "runs/distill/yolov8s_to_yolov8n_jetson/weights/best.pt"
+
+# Calibration dataset
+data: "coco.yaml"
+split: "val" # which part of the dataset to use for calibration (e.g., "train", "val", "test")
+imgsz: 640 # input image size for calibration (e.g., 640, 512, etc.)
+batch: 1 # batch size
+calib_size: 300 # number of samples to use for calibration
+
+# Export backend
+backend: "tensorrt"   # "onnx" on PC, "tensorrt" on Jetson
+device: "0" # device index for GPU ("0" for the first GPU)
+workspace: 4.0
+
+# Output
+output: "runs/quantize"
+name: "distilled_student_jetson"
