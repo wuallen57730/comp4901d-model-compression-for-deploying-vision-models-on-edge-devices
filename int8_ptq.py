@@ -1,42 +1,52 @@
 """
-INT8 Post-Training Quantization (PTQ) Utilities
+INT8 Post-Training Quantization (PTQ) — Unified Entry Point
 
-Provides a dedicated PTQ workflow for the COMP 4901D compression pipeline.
+This is the **single entry point** for all INT8 quantization workflows in the
+COMP 4901D compression pipeline.  For FP32/FP16 exports (ONNX, TensorRT FP16,
+TorchScript), use ``export_onnx.py`` instead.
 
-Supported backends:
-1. ONNX Runtime static INT8 quantization on a PC/dev machine
-2. TensorRT INT8 engine export on Jetson via Ultralytics
+Supported backends
+------------------
+1. **onnx**      – ONNX Runtime static INT8 quantization (PC / dev machine)
+2. **tensorrt**  – TensorRT INT8 engine export (Jetson via Ultralytics)
 
-The ONNX path uses:
+ONNX backend details:
 - Per-channel INT8 weight quantization
 - Entropy calibration for activations
 - QDQ format for broad runtime compatibility
 
-The TensorRT path relies on Ultralytics' TensorRT export integration and
-uses the same calibration dataset YAML used elsewhere in the project.
+TensorRT backend details:
+- Delegates to Ultralytics ``model.export(format="engine", int8=True, ...)``
+- Uses the same calibration dataset YAML used elsewhere in the project
 
-Examples:
+Examples
+--------
+::
+
     # 1) Export FP32 ONNX from distilled weights, then quantize to INT8 ONNX
-    python int8_ptq.py \
-        --weights runs/distill/yolov8s_to_yolov8n/weights/best.pt \
-        --backend onnx \
-        --data coco.yaml \
-        --split val \
+    python int8_ptq.py \\
+        --weights runs/distill/yolov8s_to_yolov8n/weights/best.pt \\
+        --backend onnx \\
+        --data coco.yaml \\
+        --split val \\
         --calib-size 300
 
     # 2) Quantize an existing ONNX model directly
-    python int8_ptq.py \
-        --onnx runs/export/distilled.onnx \
-        --backend onnx \
-        --data coco.yaml \
+    python int8_ptq.py \\
+        --onnx runs/export/distilled.onnx \\
+        --backend onnx \\
+        --data coco.yaml \\
         --imgsz 640
 
     # 3) Build an INT8 TensorRT engine on Jetson
-    python int8_ptq.py \
-        --weights runs/distill/yolov8s_to_yolov8n/weights/best.pt \
-        --backend tensorrt \
-        --data coco.yaml \
+    python int8_ptq.py \\
+        --weights runs/distill/yolov8s_to_yolov8n/weights/best.pt \\
+        --backend tensorrt \\
+        --data coco.yaml \\
         --device 0
+
+    # 4) Use a YAML config (e.g. on Jetson)
+    python int8_ptq.py --config configs/ptq_config_jetson.yaml
 """
 
 from __future__ import annotations

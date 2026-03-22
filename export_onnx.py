@@ -2,13 +2,15 @@
 ONNX & TensorRT Export Script (Milestone 3 preparation)
 
 Exports trained YOLO models to ONNX format (can be done on PC)
-and optionally to TensorRT engine format (requires Jetson/TensorRT).
+and optionally to TensorRT FP16 engine format (requires Jetson/TensorRT).
 
-This script exports multiple variants for Pareto analysis:
+This script handles FP32/FP16 exports only.  For INT8 quantization
+(ONNX Runtime PTQ or TensorRT INT8), use ``int8_ptq.py`` instead.
+
+Supported export variants for Pareto analysis:
 1. Baseline YOLOv8n (pre-trained, no distillation)
 2. Distilled Student (after KD training)
 3. FP16 TensorRT engine (on Jetson)
-4. INT8 TensorRT engine (on Jetson)
 
 Usage:
     # Export distilled model to ONNX (PC)
@@ -19,9 +21,6 @@ Usage:
 
     # Export to TensorRT FP16 (on Jetson only)
     python export_onnx.py --weights best.pt --format engine --half
-
-    # Export to TensorRT INT8 (on Jetson only)
-    python export_onnx.py --weights best.pt --format engine --int8 --data coco.yaml
 """
 
 import argparse
@@ -43,10 +42,6 @@ def main():
                         help="Input image size (default: 640)")
     parser.add_argument("--half", action="store_true",
                         help="FP16 export (for TensorRT)")
-    parser.add_argument("--int8", action="store_true",
-                        help="INT8 quantization (for TensorRT, requires calibration)")
-    parser.add_argument("--data", type=str, default="coco.yaml",
-                        help="Dataset for INT8 calibration (default: coco.yaml)")
     parser.add_argument("--simplify", action="store_true", default=True,
                         help="Simplify ONNX model (default: True)")
     parser.add_argument("--opset", type=int, default=17,
@@ -71,31 +66,21 @@ def main():
     print(f"  Format:   {args.format}")
     print(f"  ImgSz:    {args.imgsz}")
     print(f"  FP16:     {args.half}")
-    print(f"  INT8:     {args.int8}")
     print("=" * 60)
 
     # Load model
     model = YOLO(args.weights)
 
-    # Export
     export_kwargs = {
         "format": args.format,
         "imgsz": args.imgsz,
         "half": args.half,
-        "int8": args.int8,
         "simplify": args.simplify and args.format == "onnx",
         "opset": args.opset if args.format == "onnx" else None,
         "batch": args.batch,
         "device": args.device,
     }
 
-    # INT8 requires calibration data
-    if args.int8:
-        export_kwargs["data"] = args.data
-        print(f"\n[INT8] Using {args.data} for calibration")
-        print("[INT8] This applies Entropy Calibration (Per-Channel weights, Per-Tensor activations)")
-
-    # Remove None values
     export_kwargs = {k: v for k, v in export_kwargs.items() if v is not None}
 
     print(f"\nExporting with kwargs: {export_kwargs}")
@@ -110,7 +95,6 @@ def main():
         "exported_path": str(exported_path),
         "imgsz": args.imgsz,
         "half": args.half,
-        "int8": args.int8,
         "opset": args.opset if args.format == "onnx" else None,
         "batch": args.batch,
     }

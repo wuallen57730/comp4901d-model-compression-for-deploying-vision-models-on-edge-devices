@@ -48,3 +48,4 @@ val_period: 5
 
 # --- Device ---
 device: "0"                      # Jetson 通常只有一個 GPU
+
