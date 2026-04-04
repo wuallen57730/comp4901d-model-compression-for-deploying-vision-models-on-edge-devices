@@ -1,0 +1,25 @@
+# l2n v2: YOLOv8l → YOLOv8n, alpha tuned down
+teacher_weights: "yolov8l.pt"
+student_weights: "yolov8n.pt"
+data: "coco.yaml"
+imgsz: 640
+epochs: 100
+batch_size: 16
+lr0: 0.01
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 3
+workers: 8
+alpha: 0.01
+beta: 0.0
+temperature: 4.0
+feature_loss_type: "mse"
+normalize_features: false
+teacher_half: true
+amp: true
+nbs: 64
+cache: ""
+project: "runs/distill"
+name: "l2n_v2_alpha001"
+save_period: 10
+device: ""

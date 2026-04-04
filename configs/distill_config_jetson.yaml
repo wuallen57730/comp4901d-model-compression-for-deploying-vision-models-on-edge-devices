@@ -1,0 +1,51 @@
+# ============================================================
+# Knowledge Distillation Configuration — Jetson Orin Nano (8 GB)
+# COMP 4901D Project 6 - Edge Vision Model Compression
+#
+# 直接在 Jetson Orin Nano 的 GPU 上訓練蒸餾模型。
+# 8 GB 共享記憶體（CPU + GPU），需要嚴格控制記憶體用量。
+# ============================================================
+
+# --- Model Configuration ---
+# 使用 YOLOv8s 當 Teacher（11.2M params），比 YOLOv8l（43.7M）省記憶體很多
+# YOLOv8s mAP50-95 = 44.9，仍然比 YOLOv8n 的 37.3 高很多
+teacher_weights: "yolov8s.pt"
+student_weights: "yolov8n.pt"
+
+# --- Dataset ---
+data: "coco.yaml"                # 完整 COCO 2017；除錯用 "coco128.yaml"
+imgsz: 640                       # 輸入影像大小
+
+# --- Training Hyperparameters (Jetson 優化) ---
+epochs: 50                       # Jetson 上建議 50-100（速度較慢）
+batch_size: 4                    # Orin Nano 8 GB 建議 2-4
+lr0: 0.01                        # 初始學習率
+momentum: 0.937                  # SGD momentum
+weight_decay: 0.0005             # L2 正則化
+warmup_epochs: 3                 # 學習率 warmup
+workers: 2                       # DataLoader workers（Jetson 記憶體有限，不要開太多）
+
+# --- Distillation Hyperparameters ---
+alpha: 0.5                       # Feature distillation loss 權重
+beta: 0.0                        # Response KD loss 權重（0 = 只用 feature-based）
+temperature: 4.0                 # KD 溫度（beta > 0 時才有用）
+feature_loss_type: "mse"         # "mse" 或 "l1"
+normalize_features: false        # 是否先 L2-normalize features
+
+# --- Jetson 記憶體優化 ---
+teacher_half: true               # Teacher 轉 FP16，省約 50% 記憶體
+amp: true                        # 啟用 AMP 混合精度訓練
+nbs: 32                          # Nominal batch size (gradient accumulation)
+                                 # effective accumulate = nbs / batch_size = 8
+                                 # effective batch = batch_size * 8 = 32
+cache: ""                        # "" = 不快取, "disk" = 快取到硬碟（建議 SSD）
+
+# --- Output ---
+project: "runs/distill"
+name: "yolov8s_to_yolov8n_jetson"
+save_period: 10
+val_period: 5
+
+# --- Device ---
+device: "0"                      # Jetson 通常只有一個 GPU
+

@@ -1,0 +1,41 @@
+# ===== Model Weights =====
+*.pt
+*.pth
+*.onnx
+*.engine
+*.trt
+
+# ===== Datasets (COCO 52GB+) =====
+datasets/
+
+# ===== Training Runs (symlink to /data/) =====
+runs
+
+# ===== Python Cache =====
+__pycache__/
+*.pyc
+*.pyo
+
+# ===== Logs =====
+*.log
+
+# ===== Archives =====
+*.zip
+*.tar.gz
+
+# ===== Virtual Environment =====
+comp4901d_env/
+venv/
+.venv/
+env/
+
+# ===== IDE / Editor =====
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+
+# ===== OS =====
+.DS_Store
+Thumbs.db

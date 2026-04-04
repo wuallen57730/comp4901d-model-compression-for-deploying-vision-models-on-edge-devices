@@ -1,0 +1,18 @@
+# Fair baseline: YOLOv8n fine-tune from pretrained, NO KD
+# Same conditions as KD experiments (100 epochs, batch 16, etc.)
+task: detect
+model: yolov8n.pt
+data: coco.yaml
+epochs: 100
+batch: 16
+imgsz: 640
+workers: 8
+project: runs/distill
+name: finetune_baseline_100ep
+exist_ok: true
+amp: true
+nbs: 64
+device: ""
+save_period: 10
+plots: true
+val: true

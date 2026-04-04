@@ -1,0 +1,46 @@
+# ============================================================
+# Knowledge Distillation: YOLOv8m → YOLOv8n
+# COMP 4901D Project 6 - Edge Vision Model Compression
+#
+# Teacher: YOLOv8-Medium (25.9M params, mAP 50.2)
+# Student: YOLOv8-Nano   (3.2M params, mAP 37.3)
+# ============================================================
+
+# --- Model Configuration ---
+teacher_weights: "yolov8m.pt"    # Teacher: YOLOv8-Medium (25.9M params, mAP 50.2)
+student_weights: "yolov8n.pt"    # Student: YOLOv8-Nano  (3.2M params, mAP 37.3)
+
+# --- Dataset ---
+data: "coco.yaml"
+imgsz: 640
+
+# --- Training Hyperparameters ---
+epochs: 100
+batch_size: 16
+lr0: 0.01
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 3
+workers: 8
+
+# --- Distillation Hyperparameters ---
+alpha: 0.5
+beta: 0.0
+temperature: 4.0
+feature_loss_type: "mse"
+normalize_features: false
+
+# --- Memory Optimisation ---
+teacher_half: true
+amp: true
+nbs: 64
+cache: ""
+
+# --- Output ---
+project: "runs/distill"
+name: "yolov8m_to_yolov8n"
+save_period: 10
+val_period: 5
+
+# --- Device ---
+device: "1"

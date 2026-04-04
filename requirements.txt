@@ -1,0 +1,32 @@
+# ============================================================
+# COMP 4901D Project 6 - Edge Vision Model Compression
+# Requirements (PC development environment)
+# ============================================================
+
+# Core ML framework
+torch>=2.1.0
+torchvision>=0.16.0
+torchaudio>=2.1.0
+
+# YOLO framework
+ultralytics>=8.1.0
+
+# ONNX export & runtime (PC-side testing)
+onnx>=1.15.0
+onnxruntime>=1.17.0
+
+# Computer vision
+opencv-python>=4.9.0
+
+# Visualization & analysis
+matplotlib>=3.8.0
+seaborn>=0.13.0
+pandas>=2.1.0
+
+# Utilities
+scipy>=1.12.0
+tqdm>=4.66.0
+pillow>=10.2.0
+PyYAML>=6.0.1
+
+
