@@ -5,6 +5,12 @@
 *.engine
 *.trt
 
+# Allow specific distilled weights & baseline for reproducibility
+!best_s2n_v2.pt
+!best_m2n_v2.pt
+!best_l2n_v2.pt
+!yolov8n.pt
+
 # ===== Datasets (COCO 52GB+) =====
 datasets/
 
