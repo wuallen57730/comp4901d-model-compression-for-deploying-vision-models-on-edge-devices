@@ -61,13 +61,17 @@ comp4901d/
 
 > The ~0.6% mAP drop is expected — the student (YOLOv8n) capacity is the bottleneck. All 3 teacher variants converge to nearly identical student performance. The primary benefit of KD will show after INT8 quantization, where distilled models tend to be more robust to quantization degradation.
 
-### NOT Completed (Jetson Orin Nano was unreachable)
+### Completed on Jetson Orin Nano
 
-- [ ] Transfer weights to Jetson Orin Nano
-- [ ] Export to ONNX → TensorRT FP16 engine
-- [ ] INT8 quantization on Jetson
-- [ ] Run `benchmark_jetson.py` (mAP, latency, FPS, memory)
-- [ ] Generate Pareto frontier plots (`plot_pareto.py`)
+- [x] Transfer weights to Jetson Orin Nano
+- [x] Export to ONNX → TensorRT FP16 engine (all 4 models)
+- [x] INT8 quantization (all 4 models)
+- [x] `benchmark_jetson.py` for **s2n_v2** and **m2n_v2**
+
+### NOT Completed (Jetson became unreachable)
+
+- [ ] `benchmark_jetson.py` for **l2n_v2**
+- [ ] Pareto frontier plots for all 3 variants
 
 ## Setup
 
@@ -81,56 +85,31 @@ pip install -r requirements.txt
 
 Dataset: COCO val2017 is expected at `datasets/coco/` (download separately, ~52GB).
 
-### Jetson Orin Nano (Benchmarking)
+### Jetson Orin Nano — Remaining Steps
 
 ```
 Account: group1
 IP: 10.89.68.233
 ```
 
+All files, weights, ONNX exports, and INT8 engines are already on the Jetson under `~/comp4901d/`. SSH in and run the remaining commands:
+
 ```bash
-# 1. Transfer files from GPU server to local, then to Jetson
-scp ycwu@<GPU_SERVER_IP>:~/comp4901d/best_*_v2.pt .
-scp ycwu@<GPU_SERVER_IP>:~/comp4901d/yolov8n.pt .
-scp best_*_v2.pt yolov8n.pt group1@10.89.68.233:~/comp4901d/
-
-# Also transfer all Python scripts and configs
-scp ycwu@<GPU_SERVER_IP>:~/comp4901d/*.py .
-scp ycwu@<GPU_SERVER_IP>:~/comp4901d/requirements.txt .
-scp -r ycwu@<GPU_SERVER_IP>:~/comp4901d/configs .
-scp -r ycwu@<GPU_SERVER_IP>:~/comp4901d/distill .
-
-scp *.py requirements.txt group1@10.89.68.233:~/comp4901d/
-scp -r configs distill group1@10.89.68.233:~/comp4901d/
-
-# 2. On Jetson: setup environment
 ssh group1@10.89.68.233
 cd ~/comp4901d
-python3 setup_jetson.py
-pip install -r requirements.txt
 
-# 3. Export to ONNX + TensorRT FP16
-python3 export_onnx.py --weights best_s2n_v2.pt --format engine --half
-python3 export_onnx.py --weights best_m2n_v2.pt --format engine --half
-python3 export_onnx.py --weights best_l2n_v2.pt --format engine --half
-python3 export_onnx.py --weights yolov8n.pt --format engine --half
-
-# 4. INT8 quantization
-python3 int8_ptq.py --weights best_s2n_v2.pt --data coco.yaml --output runs/quantize/
-python3 int8_ptq.py --weights best_m2n_v2.pt --data coco.yaml --output runs/quantize/
-python3 int8_ptq.py --weights best_l2n_v2.pt --data coco.yaml --output runs/quantize/
-python3 int8_ptq.py --weights yolov8n.pt --data coco.yaml --output runs/quantize/
-
-# 5. Full benchmark (repeat for each model)
+# 1. Benchmark l2n_v2 (s2n_v2 and m2n_v2 already done)
 python3 benchmark_jetson.py \
     --data coco.yaml \
     --baseline-pt yolov8n.pt \
-    --distilled-pt best_s2n_v2.pt \
-    --distilled-engine-int8 runs/quantize/best_s2n_v2_int8.engine \
-    --output runs/benchmark_s2n_v2
+    --distilled-pt best_l2n_v2.pt \
+    --distilled-engine-int8 runs/quantize/best_l2n_v2_int8.engine \
+    --output runs/benchmark_l2n_v2
 
-# 6. Pareto plot
-python3 plot_pareto.py --results-dir runs/ --output runs/pareto/
+# 2. Generate Pareto plots for all 3 variants
+python3 plot_pareto.py --results runs/benchmark_s2n_v2/benchmark_results.json --output runs/plots_s2n_v2
+python3 plot_pareto.py --results runs/benchmark_m2n_v2/benchmark_results.json --output runs/plots_m2n_v2
+python3 plot_pareto.py --results runs/benchmark_l2n_v2/benchmark_results.json --output runs/plots_l2n_v2
 ```
 
 ## Baseline Definition

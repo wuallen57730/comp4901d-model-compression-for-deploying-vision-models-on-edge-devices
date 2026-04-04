@@ -1,0 +1,34 @@
+{
+  "Baseline_YOLOv8n_FP32_PyTorch": {
+    "model_path": "yolov8n.pt",
+    "model_size_mb": 6.246372222900391,
+    "mAP50": 0.5211711471333225,
+    "mAP50-95": 0.3714133046446744,
+    "latency": {
+      "avg_ms": 15.832214389987485,
+      "p50_ms": 15.807204999987334,
+      "p95_ms": 16.074185500042404,
+      "p99_ms": 16.4292686899239,
+      "std_ms": 0.12530250951086505
+    },
+    "fps": 63.162358427410766,
+    "peak_memory_mb": 35.5888671875,
+    "variant_name": "Baseline_YOLOv8n_FP32_PyTorch"
+  },
+  "Distilled_Student_FP32_PyTorch": {
+    "model_path": "best_l2n_v2.pt",
+    "model_size_mb": 6.226840019226074,
+    "mAP50": 0.5157171739820171,
+    "mAP50-95": 0.367294584726919,
+    "latency": {
+      "avg_ms": 16.594905074996404,
+      "p50_ms": 16.615738999803398,
+      "p95_ms": 16.720142599979226,
+      "p99_ms": 17.178611769827512,
+      "std_ms": 0.1343457223366212
+    },
+    "fps": 60.25945888094914,
+    "peak_memory_mb": 35.5888671875,
+    "variant_name": "Distilled_Student_FP32_PyTorch"
+  }
+}

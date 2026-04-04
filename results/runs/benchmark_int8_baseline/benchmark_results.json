@@ -1,0 +1,18 @@
+{
+  "Distilled_Student_INT8_TensorRT": {
+    "model_path": "runs/quantize/baseline_int8_int8.engine",
+    "model_size_mb": 4.987926483154297,
+    "mAP50": 0.49950409634471243,
+    "mAP50-95": 0.35353749853541444,
+    "latency": {
+      "avg_ms": 4.541172059998644,
+      "p50_ms": 4.304681500343577,
+      "p95_ms": 5.760366200365752,
+      "p99_ms": 6.624977720111929,
+      "std_ms": 0.6831437441663649
+    },
+    "fps": 220.20746776115297,
+    "peak_memory_mb": 12.06689453125,
+    "variant_name": "Distilled_Student_INT8_TensorRT"
+  }
+}

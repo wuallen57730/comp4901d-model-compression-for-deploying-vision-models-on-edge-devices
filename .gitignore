@@ -14,8 +14,11 @@
 # ===== Datasets (COCO 52GB+) =====
 datasets/
 
-# ===== Training Runs (symlink to /data/) =====
-runs
+# ===== Training Runs (root symlink to /data/) =====
+/runs
+
+# Ignore engine files inside results/runs/quantize (architecture-specific binaries)
+results/runs/quantize/
 
 # ===== Python Cache =====
 __pycache__/

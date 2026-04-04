@@ -1,0 +1,138 @@
+{
+  "Baseline_FP32": {
+    "model_path": "yolov8n.pt",
+    "model_size_mb": 6.246372222900391,
+    "mAP50": 0.5211711471333225,
+    "mAP50-95": 0.3714133046446744,
+    "latency": {
+      "avg_ms": 15.436872880009105,
+      "p50_ms": 15.400011499878019,
+      "p95_ms": 15.856301650683235,
+      "p99_ms": 16.090253719421526,
+      "std_ms": 0.15710191230260936
+    },
+    "fps": 64.77995950170772,
+    "peak_memory_mb": 35.5888671875,
+    "variant_name": "Baseline_YOLOv8n_FP32_PyTorch",
+    "display_name": "Baseline (FP32)"
+  },
+  "KD_s2n_FP32": {
+    "model_path": "best_s2n_v2.pt",
+    "model_size_mb": 6.226840019226074,
+    "mAP50": 0.5172113323544205,
+    "mAP50-95": 0.36704592905751954,
+    "latency": {
+      "avg_ms": 15.46306984000239,
+      "p50_ms": 15.40720299954046,
+      "p95_ms": 15.724543999522211,
+      "p99_ms": 17.359972539852606,
+      "std_ms": 0.2814319606238946
+    },
+    "fps": 64.6702116945134,
+    "peak_memory_mb": 35.5888671875,
+    "variant_name": "Distilled_Student_FP32_PyTorch",
+    "display_name": "KD: s\u2192n (FP32)"
+  },
+  "KD_m2n_FP32": {
+    "model_path": "best_m2n_v2.pt",
+    "model_size_mb": 6.226840019226074,
+    "mAP50": 0.5164895605131041,
+    "mAP50-95": 0.3670089535059723,
+    "latency": {
+      "avg_ms": 16.609421109998266,
+      "p50_ms": 16.621439999994436,
+      "p95_ms": 16.7959933999839,
+      "p99_ms": 17.162888610066602,
+      "std_ms": 0.15691601130753458
+    },
+    "fps": 60.20679428725162,
+    "peak_memory_mb": 35.5888671875,
+    "variant_name": "Distilled_Student_FP32_PyTorch",
+    "display_name": "KD: m\u2192n (FP32)"
+  },
+  "KD_l2n_FP32": {
+    "model_path": "best_l2n_v2.pt",
+    "model_size_mb": 6.226840019226074,
+    "mAP50": 0.5157171739820171,
+    "mAP50-95": 0.367294584726919,
+    "latency": {
+      "avg_ms": 16.594905074996404,
+      "p50_ms": 16.615738999803398,
+      "p95_ms": 16.720142599979226,
+      "p99_ms": 17.178611769827512,
+      "std_ms": 0.1343457223366212
+    },
+    "fps": 60.25945888094914,
+    "peak_memory_mb": 35.5888671875,
+    "variant_name": "Distilled_Student_FP32_PyTorch",
+    "display_name": "KD: l\u2192n (FP32)"
+  },
+  "Baseline_INT8": {
+    "model_path": "runs/quantize/baseline_int8_int8.engine",
+    "model_size_mb": 4.987926483154297,
+    "mAP50": 0.49950409634471243,
+    "mAP50-95": 0.35353749853541444,
+    "latency": {
+      "avg_ms": 4.541172059998644,
+      "p50_ms": 4.304681500343577,
+      "p95_ms": 5.760366200365752,
+      "p99_ms": 6.624977720111929,
+      "std_ms": 0.6831437441663649
+    },
+    "fps": 220.20746776115297,
+    "peak_memory_mb": 12.06689453125,
+    "variant_name": "Distilled_Student_INT8_TensorRT",
+    "display_name": "Baseline INT8 (Q only)"
+  },
+  "KD_s2n_INT8": {
+    "model_path": "runs/quantize/best_s2n_v2_int8.engine",
+    "model_size_mb": 4.965895652770996,
+    "mAP50": 0.5044195598364394,
+    "mAP50-95": 0.3531983410675693,
+    "latency": {
+      "avg_ms": 4.4064572699971905,
+      "p50_ms": 4.1893200000231445,
+      "p95_ms": 5.90340719966207,
+      "p99_ms": 6.832672600253318,
+      "std_ms": 0.709566122593446
+    },
+    "fps": 226.93967936755632,
+    "peak_memory_mb": 12.06689453125,
+    "variant_name": "Distilled_Student_INT8_TensorRT",
+    "display_name": "KD: s\u2192n + INT8"
+  },
+  "KD_m2n_INT8": {
+    "model_path": "runs/quantize/best_m2n_v2_int8.engine",
+    "model_size_mb": 4.988211631774902,
+    "mAP50": 0.4996389590612843,
+    "mAP50-95": 0.34967594130765023,
+    "latency": {
+      "avg_ms": 4.627429845011193,
+      "p50_ms": 4.560222000009162,
+      "p95_ms": 5.792866249908002,
+      "p99_ms": 6.709937049945438,
+      "std_ms": 0.6926587776328843
+    },
+    "fps": 216.10268194083906,
+    "peak_memory_mb": 12.06689453125,
+    "variant_name": "Distilled_Student_INT8_TensorRT",
+    "display_name": "KD: m\u2192n + INT8"
+  },
+  "KD_l2n_INT8": {
+    "model_path": "runs/quantize/best_l2n_v2_int8.engine",
+    "model_size_mb": 4.991377830505371,
+    "mAP50": 0.49775428989485127,
+    "mAP50-95": 0.34540247201153973,
+    "latency": {
+      "avg_ms": 4.623451095003475,
+      "p50_ms": 4.367717999684828,
+      "p95_ms": 5.839506549591521,
+      "p99_ms": 6.706881000609428,
+      "std_ms": 0.706074522862997
+    },
+    "fps": 216.28865093451333,
+    "peak_memory_mb": 12.06689453125,
+    "variant_name": "Distilled_Student_INT8_TensorRT",
+    "display_name": "KD: l\u2192n + INT8"
+  }
+}
