@@ -166,11 +166,9 @@ python3 setup_jetson.py
 | GPU Server | NVIDIA A100/V100, CUDA | KD training (100 epochs, COCO) |
 | Jetson Orin NX | 8GB shared RAM, 1024 CUDA cores, TensorRT | Inference benchmark & demo |
 
-## TODO: Real-Time Demo (Webcam)
+## Real-Time Demo (Webcam)
 
-### Goal
-
-Live side-by-side comparison of **baseline vs best compressed model** using a USB webcam on the Jetson.
+The realtime backend is now implemented under `edge_demo/` and is designed to run on the Jetson while a UI laptop consumes frames and metrics over LAN.
 
 ### Demo Plan
 
@@ -181,33 +179,24 @@ Live side-by-side comparison of **baseline vs best compressed model** using a US
 | Expected FPS | ~60 (n) or ~30 (s) | **~227** |
 | Expected Latency | ~15ms (n) or ~30ms (s) | **~4.4ms** |
 
-### Requirements
+### Backend Entry Point
 
-- USB webcam as live video source (`cv2.VideoCapture(0)`)
-- Real-time inference with both models on every frame
-- Split-screen / side-by-side display showing:
-  - Bounding box detections
-  - **FPS** overlay
-  - **Latency (ms)** overlay
-  - **Memory usage** overlay
-- Clear visual contrast between baseline and compressed model performance
-
-### Implementation Sketch
-
-```python
-from ultralytics import YOLO
-import cv2
-
-baseline = YOLO("yolov8n.pt")  # or yolov8s.pt for bigger contrast
-compressed = YOLO("runs/quantize/best_s2n_v2_int8.engine", task="detect")
-
-cap = cv2.VideoCapture(0)
-while cap.isOpened():
-    ret, frame = cap.read()
-    # Run both models, measure time, draw results side-by-side
-    # Overlay FPS, latency, memory on each panel
-    # cv2.hconcat([left_panel, right_panel])
+```bash
+python -m edge_demo.main \
+  --baseline-model yolov8n.pt \
+  --compressed-model runs/quantize/best_s2n_v2_int8.engine \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --camera-index 0
 ```
+
+### API Endpoints
+
+- `GET /health`
+- `GET /metrics`
+- `GET /detections/latest`
+- `GET /snapshot.jpg`
+- `GET /stream/combined.mjpg`
 
 ### Key Files
 
@@ -220,3 +209,5 @@ while cap.isOpened():
 ### Expected Demo Outcome
 
 The demo should clearly show that the compressed model (KD + INT8) runs **~3.5x faster** than the baseline while maintaining visually similar detection quality, validating the effectiveness of the compression pipeline for edge deployment.
+
+Implementation details and Jetson launch notes are in `edge_demo/README.md`.

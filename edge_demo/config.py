@@ -49,7 +49,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--compressed-model",
         type=str,
-        default=_env("EDGE_DEMO_COMPRESSED_MODEL", ""),
+        default=_env(
+            "EDGE_DEMO_COMPRESSED_MODEL",
+            "runs/quantize/best_s2n_v2_int8.engine",
+        ),
         help="Compressed deployment artifact, typically an INT8 TensorRT engine",
     )
     parser.add_argument(

@@ -27,12 +27,13 @@ The backend uses an asynchronous "latest frame wins" policy. If one model is slo
 
 ## Expected Artifacts
 - Baseline model: `yolov8n.pt`
-- Compressed model: distilled `INT8 .engine`
+- Distilled checkpoint: `best_s2n_v2.pt`
+- Compressed model: `runs/quantize/best_s2n_v2_int8.engine`
 
 Example compressed artifact path:
 
 ```bash
-runs/quantize/distilled_student_jetson.engine
+runs/quantize/best_s2n_v2_int8.engine
 ```
 
 ## Jetson Setup
@@ -61,7 +62,7 @@ Run the backend directly from the project root:
 ```bash
 python -m edge_demo.main \
   --baseline-model yolov8n.pt \
-  --compressed-model runs/quantize/distilled_student_jetson.engine \
+  --compressed-model runs/quantize/best_s2n_v2_int8.engine \
   --host 0.0.0.0 \
   --port 8000 \
   --camera-index 0
@@ -71,7 +72,7 @@ You can also set environment variables instead of passing CLI args:
 
 ```bash
 export EDGE_DEMO_BASELINE_MODEL=yolov8n.pt
-export EDGE_DEMO_COMPRESSED_MODEL=runs/quantize/distilled_student_jetson.engine
+export EDGE_DEMO_COMPRESSED_MODEL=runs/quantize/best_s2n_v2_int8.engine
 export EDGE_DEMO_HOST=0.0.0.0
 export EDGE_DEMO_PORT=8000
 python -m edge_demo.main
@@ -132,5 +133,5 @@ This lets them build the frontend without needing to touch YOLO, TensorRT, or th
 - Check firewall or hotspot isolation settings on the demo network.
 
 ## Notes
-- The current v1 comparison is `baseline PyTorch .pt` vs `compressed INT8 TensorRT .engine`.
+- The current v1 comparison is `yolov8n.pt` vs `best_s2n_v2_int8.engine`.
 - This is intentionally optimized for a smooth live demo rather than a perfectly backend-matched benchmark.

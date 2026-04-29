@@ -42,7 +42,11 @@ class BaseModelRunner:
         try:
             if not artifact_path:
                 raise ValueError("No artifact path provided.")
-            self.model = YOLO(artifact_path)
+            model_kwargs = {}
+            if Path(artifact_path).suffix.lower() == ".engine":
+                # TensorRT engines can be more reliable when the detection task is explicit.
+                model_kwargs["task"] = "detect"
+            self.model = YOLO(artifact_path, **model_kwargs)
             self.model_name = Path(artifact_path).name
         except Exception as exc:
             self.load_error = str(exc)

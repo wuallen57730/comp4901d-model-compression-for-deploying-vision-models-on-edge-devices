@@ -4,7 +4,7 @@
 # ============================================================
 
 # Source model
-weights: "runs/distill/yolov8s_to_yolov8n_jetson/weights/best.pt"
+weights: "best_s2n_v2.pt"
 
 # Calibration dataset
 data: "coco.yaml"
@@ -20,4 +20,4 @@ workspace: 4.0
 
 # Output
 output: "runs/quantize"
-name: "distilled_student_jetson"
+name: "best_s2n_v2_int8"
