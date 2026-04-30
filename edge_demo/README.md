@@ -65,7 +65,7 @@ python -m edge_demo.main \
   --compressed-model runs/quantize/best_s2n_v2_int8.engine \
   --host 0.0.0.0 \
   --port 8000 \
-  --camera-index 0
+  --camera-index 1
 ```
 
 You can also set environment variables instead of passing CLI args:
@@ -89,9 +89,12 @@ python -m edge_demo.main
   - Returns the latest side-by-side composed frame as JPEG
 - `GET /stream/combined.mjpg`
   - Returns a live MJPEG stream of the composed demo frame
+- `GET /viewer`
+  - Returns a browser-friendly fullscreen viewer page for the live demo stream
 
 ## UI Handoff
 Your UI teammate can start with:
+- `http://<jetson-ip>:8000/viewer`
 - `http://<jetson-ip>:8000/snapshot.jpg`
 - `http://<jetson-ip>:8000/stream/combined.mjpg`
 - `http://<jetson-ip>:8000/metrics`
