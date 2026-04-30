@@ -3,7 +3,12 @@ from __future__ import annotations
 import threading
 import time
 
-from .overlay import draw_composite_header, draw_panel_overlay, make_placeholder_frame
+from .overlay import (
+    PANEL_HEADER_HEIGHT,
+    draw_composite_header,
+    make_panel_header,
+    make_placeholder_frame,
+)
 from .state import AppState, RawFrame, WorkerSnapshot
 
 
@@ -32,13 +37,16 @@ def build_composite_frame(raw_frame: RawFrame, baseline: WorkerSnapshot, compres
     else:
         panel_size = (960, 540)
 
-    left = _prepare_panel(raw_frame, baseline, panel_size, "Baseline")
-    right = _prepare_panel(raw_frame, compressed, panel_size, "Compressed")
+    left_header, left_frame = _prepare_panel(raw_frame, baseline, panel_size, "Baseline")
+    right_header, right_frame = _prepare_panel(raw_frame, compressed, panel_size, "Compressed")
 
     header_height = 52
-    combined = np.zeros((panel_size[1] + header_height, panel_size[0] * 2, 3), dtype=np.uint8)
-    combined[header_height:, : panel_size[0]] = left
-    combined[header_height:, panel_size[0] :] = right
+    panel_block_height = PANEL_HEADER_HEIGHT + panel_size[1]
+    combined = np.zeros((header_height + panel_block_height, panel_size[0] * 2, 3), dtype=np.uint8)
+    combined[header_height:header_height + PANEL_HEADER_HEIGHT, : panel_size[0]] = left_header
+    combined[header_height:header_height + PANEL_HEADER_HEIGHT, panel_size[0]:] = right_header
+    combined[header_height + PANEL_HEADER_HEIGHT:, : panel_size[0]] = left_frame
+    combined[header_height + PANEL_HEADER_HEIGHT:, panel_size[0]:] = right_frame
 
     frame_id = raw_frame.frame_id if raw_frame is not None else None
     timestamp = raw_frame.timestamp if raw_frame is not None else None
@@ -64,15 +72,15 @@ def _prepare_panel(
     width, height = panel_size
 
     if snapshot.annotated_frame is not None:
-        panel = snapshot.annotated_frame.copy()
+        frame = snapshot.annotated_frame.copy()
     elif raw_frame is not None:
-        panel = raw_frame.frame.copy()
+        frame = raw_frame.frame.copy()
     else:
-        panel = make_placeholder_frame(panel_size, title, "Waiting for camera input...")
+        frame = make_placeholder_frame(panel_size, title, "Waiting for camera input...")
 
-    panel = cv2.resize(panel, (width, height))
+    frame = cv2.resize(frame, (width, height))
     if not snapshot.loaded and snapshot.error:
         placeholder = make_placeholder_frame(panel_size, title, snapshot.error)
-        panel = placeholder
-    draw_panel_overlay(panel, title, snapshot)
-    return panel
+        frame = placeholder
+    header = make_panel_header(width, title, snapshot)
+    return header, frame

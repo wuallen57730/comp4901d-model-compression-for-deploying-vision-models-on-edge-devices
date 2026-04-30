@@ -9,6 +9,7 @@ BOX_COLOR = (78, 205, 196)
 TEXT_COLOR = (255, 255, 255)
 BANNER_COLOR = (33, 33, 33)
 ERROR_COLOR = (60, 76, 231)
+PANEL_HEADER_HEIGHT = 86
 
 
 def annotate_detections(frame, detections: List[Detection], line_width: int) -> None:
@@ -51,15 +52,14 @@ def annotate_detections(frame, detections: List[Detection], line_width: int) -> 
         )
 
 
-def draw_panel_overlay(frame, title: str, snapshot: WorkerSnapshot) -> None:
+def draw_panel_overlay(panel, title: str, snapshot: WorkerSnapshot) -> None:
     import cv2
 
-    header_height = 86
-    cv2.rectangle(frame, (0, 0), (frame.shape[1], header_height), BANNER_COLOR, -1)
+    cv2.rectangle(panel, (0, 0), (panel.shape[1], PANEL_HEADER_HEIGHT), BANNER_COLOR, -1)
 
     status_text = "loaded" if snapshot.loaded else "unavailable"
     cv2.putText(
-        frame,
+        panel,
         title,
         (16, 28),
         cv2.FONT_HERSHEY_SIMPLEX,
@@ -69,7 +69,7 @@ def draw_panel_overlay(frame, title: str, snapshot: WorkerSnapshot) -> None:
         cv2.LINE_AA,
     )
     cv2.putText(
-        frame,
+        panel,
         "{model} | {status}".format(model=snapshot.model_name, status=status_text),
         (16, 54),
         cv2.FONT_HERSHEY_SIMPLEX,
@@ -85,7 +85,7 @@ def draw_panel_overlay(frame, title: str, snapshot: WorkerSnapshot) -> None:
         count=len(snapshot.detections),
     )
     cv2.putText(
-        frame,
+        panel,
         stats,
         (16, 76),
         cv2.FONT_HERSHEY_SIMPLEX,
@@ -97,16 +97,16 @@ def draw_panel_overlay(frame, title: str, snapshot: WorkerSnapshot) -> None:
 
     if snapshot.error:
         cv2.rectangle(
-            frame,
-            (0, frame.shape[0] - 38),
-            (frame.shape[1], frame.shape[0]),
+            panel,
+            (0, panel.shape[0] - 38),
+            (panel.shape[1], panel.shape[0]),
             ERROR_COLOR,
             -1,
         )
         cv2.putText(
-            frame,
-            snapshot.error[: max(10, int(frame.shape[1] / 9))],
-            (16, frame.shape[0] - 12),
+            panel,
+            snapshot.error[: max(10, int(panel.shape[1] / 9))],
+            (16, panel.shape[0] - 12),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.55,
             TEXT_COLOR,
@@ -196,6 +196,14 @@ def make_placeholder_frame(size: Tuple[int, int], title: str, subtitle: str):
         cv2.LINE_AA,
     )
     return canvas
+
+
+def make_panel_header(width: int, title: str, snapshot: WorkerSnapshot):
+    import numpy as np
+
+    panel = np.zeros((PANEL_HEADER_HEIGHT, width, 3), dtype=np.uint8)
+    draw_panel_overlay(panel, title, snapshot)
+    return panel
 
 
 def _format_number(value: Optional[float]) -> str:
