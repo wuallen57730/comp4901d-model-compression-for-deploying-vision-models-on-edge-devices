@@ -10,7 +10,7 @@ from .state import AppState
 def create_app(state: AppState, config: DemoConfig):
     from fastapi import FastAPI
     from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import JSONResponse, Response, StreamingResponse
+    from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 
     app = FastAPI(title="COMP4901D Edge Demo", version="1.0.0")
     app.add_middleware(
@@ -50,6 +50,10 @@ def create_app(state: AppState, config: DemoConfig):
             media_type="multipart/x-mixed-replace; boundary=frame",
         )
 
+    @app.get("/viewer", response_class=HTMLResponse)
+    def viewer():
+        return HTMLResponse(_viewer_html())
+
     return app
 
 
@@ -79,3 +83,92 @@ def _encode_jpeg(state: AppState, jpeg_quality: int) -> Optional[bytes]:
     if not ok:
         return None
     return encoded.tobytes()
+
+
+def _viewer_html() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>COMP4901D Edge Demo Viewer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0b0b;
+      --panel: #111111;
+      --text: #f4f4f4;
+      --muted: #b8b8b8;
+      --accent: #d7df23;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      background: rgba(17, 17, 17, 0.92);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.02em;
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    main {
+      display: grid;
+      place-items: center;
+      padding: 12px;
+    }
+    .stage {
+      width: min(98vw, 2200px);
+      height: calc(100vh - 86px);
+      display: grid;
+      place-items: center;
+      background: #050505;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+    }
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      display: block;
+    }
+    .accent {
+      color: var(--accent);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>COMP4901D Edge Demo Viewer</h1>
+    <div class="hint">Open browser fullscreen for the biggest display. Stream source: <span class="accent">/stream/combined.mjpg</span></div>
+  </header>
+  <main>
+    <div class="stage">
+      <img src="/stream/combined.mjpg" alt="COMP4901D Edge Demo Stream" />
+    </div>
+  </main>
+</body>
+</html>
+"""
