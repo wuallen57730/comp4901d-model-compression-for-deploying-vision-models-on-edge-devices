@@ -93,7 +93,7 @@ Output in `runs/plots_final_7pt/`:
 | 2 | KD: s→n | FP32 PyTorch | 0.3670 | 15.46 | 64.7 | 35.6 |
 | 3 | KD: m→n | FP32 PyTorch | 0.3670 | 16.61 | 60.2 | 35.6 |
 | 4 | KD: l→n | FP32 PyTorch | 0.3673 | 16.59 | 60.3 | 35.6 |
-| 5 | Baseline INT8 (Q only) | INT8 TensorRT | TBD | TBD | TBD | TBD |
+| 5 | Baseline INT8 (Q only) | INT8 TensorRT | 0.3535 | 4.54 | 220.2 | 12.1 |
 | 6 | KD: s→n + INT8 | INT8 TensorRT | 0.3532 | 4.41 | 226.9 | 12.1 |
 | 7 | KD: m→n + INT8 | INT8 TensorRT | 0.3497 | 4.63 | 216.1 | 12.1 |
 | 8 | KD: l→n + INT8 | INT8 TensorRT | 0.3454 | 4.62 | 216.3 | 12.1 |
@@ -152,40 +152,35 @@ comp4901d/
 
 ---
 
-## TODO for Next Person: Demo
+## Real-Time Demo (Implemented)
 
-### Goal
-Real-time webcam demo comparing inference of two models side-by-side.
+The real-time demo backend is implemented in `edge_demo/` and runs on Jetson Orin NX.  
+It captures USB webcam input, runs baseline and compressed models in parallel, composes side-by-side output, and serves stream + metrics to a UI client over LAN.
 
-### Requirements
-- Show **yolov8s (or yolov8n baseline)** vs **our best compressed model (KD: s→n + INT8)** side-by-side
-- Use a **USB webcam** as live video source
-- Display on screen in real-time:
-  - Bounding box detection results
-  - **FPS** overlay
-  - **Latency (ms)** overlay
-  - **Memory usage** overlay
-- Two camera feeds or split-screen layout for clear contrast
+### Launch Command
+Run from the project root:
 
-### Suggested Approach
-1. Use OpenCV `cv2.VideoCapture(0)` for webcam
-2. Load two YOLO models: baseline `.pt` and compressed `.engine`
-3. Run inference on each frame with both models
-4. Draw results side-by-side using `cv2.hconcat()` or similar
-5. Overlay FPS/latency/memory text with `cv2.putText()`
-
-### Key Files for Demo
-- Best compressed model: `runs/quantize/best_s2n_v2_int8.engine` (226.9 FPS, 4.41ms)
-- Baseline for comparison: `yolov8n.pt` (64.8 FPS, 15.44ms) or `yolov8s.pt`
-- Expected contrast: **~3.5x faster**, **66% less memory**
-
-### Model Loading Example
-```python
-from ultralytics import YOLO
-
-baseline = YOLO("yolov8n.pt")        # or yolov8s.pt for bigger contrast
-compressed = YOLO("runs/quantize/best_s2n_v2_int8.engine", task="detect")
+```bash
+python -m edge_demo.main \
+  --baseline-model yolov8n.pt \
+  --compressed-model runs/quantize/best_s2n_v2_int8.engine \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --camera-index 1
 ```
+
+### Demo API Endpoints
+- `GET /health` — camera and model load status
+- `GET /metrics` — FPS/latency and latest frame stats
+- `GET /detections/latest` — latest baseline/compressed detections (JSON)
+- `GET /snapshot.jpg` — latest side-by-side frame
+- `GET /stream/combined.mjpg` — live MJPEG stream
+- `GET /viewer` — browser fullscreen viewer page
+
+### Demo Assets
+- Best compressed model: `runs/quantize/best_s2n_v2_int8.engine` (226.9 FPS, 4.41 ms)
+- Baseline model: `yolov8n.pt` (64.8 FPS, 15.44 ms)
+- Expected contrast: **~3.5x faster**, **~66% lower runtime memory**
 
 ---
 
