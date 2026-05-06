@@ -1,0 +1,23 @@
+{
+  "model": "yolov8l.pt",
+  "data": "coco.yaml",
+  "imgsz": 640,
+  "parameters": 43691520,
+  "model_size_mb": 83.72577285766602,
+  "mAP50": 0.6946639277567502,
+  "mAP50-95": 0.5305568569418946,
+  "latency": {
+    "avg_latency_ms": 84.22531147999052,
+    "fps": 11.872915426825946,
+    "p50_ms": 84.215172499853,
+    "p95_ms": 85.04732084988973,
+    "p99_ms": 85.3904677896935,
+    "std_ms": 0.4603146440142055
+  },
+  "memory": {
+    "peak_allocated_mb": 269.4658203125,
+    "peak_reserved_mb": 364.0
+  },
+  "device": "0",
+  "notes": "Baseline evaluation (no compression applied)"
+}
