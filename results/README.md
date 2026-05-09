@@ -85,18 +85,21 @@ Output in `runs/plots_final_7pt/`:
 
 ---
 
-## Benchmark Results (8 Model Variants)
+## Benchmark Results (11 Model Variants)
 
 | # | Model | Format | mAP50-95 | Latency (ms) | FPS | Memory (MB) |
 |---|-------|--------|----------|-------------|-----|-------------|
 | 1 | Baseline (pretrained yolov8n) | FP32 PyTorch | 0.3714 | 15.44 | 64.8 | 35.6 |
-| 2 | KD: s→n | FP32 PyTorch | 0.3670 | 15.46 | 64.7 | 35.6 |
-| 3 | KD: m→n | FP32 PyTorch | 0.3670 | 16.61 | 60.2 | 35.6 |
-| 4 | KD: l→n | FP32 PyTorch | 0.3673 | 16.59 | 60.3 | 35.6 |
-| 5 | Baseline INT8 (Q only) | INT8 TensorRT | 0.3535 | 4.54 | 220.2 | 12.1 |
-| 6 | KD: s→n + INT8 | INT8 TensorRT | 0.3532 | 4.41 | 226.9 | 12.1 |
-| 7 | KD: m→n + INT8 | INT8 TensorRT | 0.3497 | 4.63 | 216.1 | 12.1 |
-| 8 | KD: l→n + INT8 | INT8 TensorRT | 0.3454 | 4.62 | 216.3 | 12.1 |
+| 2 | Baseline (pretrained yolov8s) | FP32 PyTorch | 0.4480 | 22.32 | 44.8 | 85.2 |
+| 3 | Baseline (pretrained yolov8m) | FP32 PyTorch | 0.5025 | 47.69 | 21.0 | 167.0 |
+| 4 | Baseline (pretrained yolov8l) | FP32 PyTorch | 0.5306 | 84.23 | 11.9 | 269.5 |
+| 5 | KD: s→n | FP32 PyTorch | 0.3670 | 15.46 | 64.7 | 35.6 |
+| 6 | KD: m→n | FP32 PyTorch | 0.3670 | 16.61 | 60.2 | 35.6 |
+| 7 | KD: l→n | FP32 PyTorch | 0.3673 | 16.59 | 60.3 | 35.6 |
+| 8 | Baseline INT8 (Q only) | INT8 TensorRT | 0.3535 | 4.54 | 220.2 | 12.1 |
+| 9 | KD: s→n + INT8 | INT8 TensorRT | 0.3532 | 4.41 | 226.9 | 12.1 |
+| 10 | KD: m→n + INT8 | INT8 TensorRT | 0.3497 | 4.63 | 216.1 | 12.1 |
+| 11 | KD: l→n + INT8 | INT8 TensorRT | 0.3454 | 4.62 | 216.3 | 12.1 |
 
 ### Key Findings
 
